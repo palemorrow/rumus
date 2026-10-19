@@ -36,7 +36,7 @@ batch program (x ∷ []) = bool-text (compiled-accepts program (toList x))
 batch program (x ∷ xs) = bool-text (compiled-accepts program (toList x)) ++ "\n" ++ batch program xs
 
 usage : String
-usage = "usage: rumus match REGEX INPUT\n       rumus match-many REGEX INPUT...\n       rumus equivalent REGEX REGEX\n       rumus normalize REGEX\n       rumus trace REGEX INPUT\nsyntax: # empty, @ epsilon, | union, juxtaposition, *, (), \\ escape"
+usage = "usage: rumus match REGEX INPUT\n       rumus match-many REGEX INPUT...\n       rumus equivalent REGEX REGEX\n       rumus normalize REGEX\n       rumus serialize REGEX\n       rumus trace REGEX INPUT\nsyntax: # empty, @ epsilon, | union, juxtaposition, *, (), \\ escape"
 
 command : List String → Response
 command ("match" ∷ regex-text ∷ input ∷ []) with parse regex-text
@@ -55,6 +55,9 @@ command ("equivalent" ∷ lhs ∷ rhs ∷ []) with parse lhs | parse rhs
 command ("normalize" ∷ regex-text ∷ []) with parse regex-text
 ... | inj₁ e = parse-error e
 ... | inj₂ r = response true (print-regex (normalize r))
+command ("serialize" ∷ regex-text ∷ []) with parse regex-text
+... | inj₁ e = parse-error e
+... | inj₂ r = response true (fromList (print-chars r))
 command ("trace" ∷ regex-text ∷ input ∷ []) with parse regex-text
 ... | inj₁ e = parse-error e
 ... | inj₂ r = response true (trace (normalize r) (toList input))

@@ -103,6 +103,13 @@ assert invoke("--help").startswith("usage: rumus")
 for char in [chr(n) for n in range(32, 127)] + ["λ", "🙂", "é"]:
     expect(("match", "\\" + char, char), "true")
     expect(("match", "(\\" + char + ")", char), "true")
+    serialized = invoke("serialize", "\\" + char)
+    expect(("match", serialized, char), "true")
+    expect(("match", serialized, ""), "false")
+
+expect(("serialize", "ab"), "((\\a)(\\b))")
+expect(("serialize", "#"), "(#)")
+expect(("serialize", "@"), "(@)")
 
 normalizations = [
     ("#|a", "a"),
@@ -184,6 +191,9 @@ for expression in sorted(expressions, key=repr):
     expected = language(expression, 3)
     normalized = invoke("normalize", regex)
     expect(("normalize", normalized), normalized)
+    serialized = invoke("serialize", regex)
+    expect(("normalize", serialized), normalized)
+    expect(("match-many", serialized, *words), "\n".join(str(word in expected).lower() for word in words))
     expect(("match-many", regex, *words), "\n".join(str(word in expected).lower() for word in words))
     for word in words:
         accepted = str(word in expected).lower()

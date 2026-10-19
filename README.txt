@@ -174,6 +174,17 @@
            a downstream module importing the library must enable --erasure and
            --erased-matches, matching the checked configuration used by this project
 
+            the parenthesized character-list printer escapes literal symbols and
+            has an exact syntax round-trip theorem with the character-list parser.
+            the string-facing display and terminal conversions use agda primitives,
+            keeping those conversions outside the statement of that theorem
+
+          serialize prints the parenthesized representation used by the character-list
+          round-trip theorem, retaining explicit escapes for each literal symbol
+
+                                 $ ./build/rumus serialize 'ab'
+                                 ((\a)(\b))
+
                                           references:
 
            [1] j. a. brzozowski, derivatives of regular expressions, 1964.

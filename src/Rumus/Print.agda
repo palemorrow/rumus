@@ -32,3 +32,16 @@ render outer (star r) = wrap outer 3 (render 3 r ++ "*")
 
 print-regex : Regex Char → String
 print-regex = render 0
+
+open import Data.List.Base using (List; []; _∷_)
+
+emit : Regex Char → List Char → List Char
+emit ∅ suffix = '(' ∷ '#' ∷ ')' ∷ suffix
+emit ε suffix = '(' ∷ '@' ∷ ')' ∷ suffix
+emit (lit c) suffix = '(' ∷ '\\' ∷ c ∷ ')' ∷ suffix
+emit (r ∪ s) suffix = '(' ∷ emit r ('|' ∷ emit s (')' ∷ suffix))
+emit (r ∙ s) suffix = '(' ∷ emit r (emit s (')' ∷ suffix))
+emit (star r) suffix = '(' ∷ emit r ('*' ∷ ')' ∷ suffix)
+
+print-chars : Regex Char → List Char
+print-chars r = emit r []
