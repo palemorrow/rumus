@@ -98,6 +98,12 @@
            transitions. exhausting the queue establishes a closed bisimulation whose
            correctness follows by induction on the remaining input
 
+          with k and j literal occurrences in the two source expressions, every
+          shortest distinguishing word has length below (1 + 2^k)(1 + 2^j). this bound
+          follows from a decreasing unvisited-state budget and the proved cardinality
+          of the position-state enumerations, with its certificates erased before
+          execution
+
              for a*b and ab* the successor languages after b normalize to @ and #,
              so the empty string distinguishes that successor pair and prefixing b
              gives the counterexample returned for the initial pair:

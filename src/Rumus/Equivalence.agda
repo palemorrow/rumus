@@ -11,11 +11,14 @@ open import Data.Product.Base using (Σ; _×_; _,_; proj₁; proj₂)
 open import Data.Sum.Base using (_⊎_; inj₁; inj₂)
 open import Relation.Nullary using (Dec; yes; no; does)
 open import Relation.Binary.PropositionalEquality.Core using (_≡_; refl)
-open import Data.Nat.Base using (_≤_)
+open import Data.Nat.Base using (_≤_; _<_; s≤s)
 open import Data.List.Relation.Unary.All using (All)
 open import Rumus.Regex
 open import Rumus.Language
 open import Rumus.Finite
+open import Rumus.Cardinality using (pair-bound; module Counts)
+open import Data.Nat.Properties using (≤-trans)
+open import Relation.Binary.PropositionalEquality.Core using (subst)
 open import Rumus.Support
 import Rumus.CachedAutomaton
 import Rumus.BreadthFirst
@@ -42,6 +45,11 @@ forget-shortest (shortest-difference x proof minimal) = different x proof
 transport-difference : ∀ {r s t u x} → r ≈ t → s ≈ u → Distinguishes r s x → Distinguishes t u x
 transport-difference rt su (inj₁ (p , nq)) = inj₁ (proj₁ rt p , λ q → nq (proj₂ su q))
 transport-difference rt su (inj₂ (q , np)) = inj₂ (proj₁ su q , λ p → np (proj₂ rt p))
+
+witness-refutes : ∀ {r s x} → Distinguishes r s x → r ≈ s → ⊥
+witness-refutes (inj₁ (p , n)) same = n (proj₁ same p)
+witness-refutes (inj₂ (q , n)) same = n (proj₂ same q)
+
 
 module Compare (r s : Regex A) where
   module Left = Rumus.CachedAutomaton _≟_ r
@@ -85,6 +93,16 @@ module Compare (r s : Regex A) where
     (witness-sound (Check.Shortest.witness proof))
     (λ y h → Check.Shortest.minimal proof y (witness-support h) (witness-complete h))
 
+  @0 minimal-bound : ∀ x → Distinguishes r s x → Minimal r s x → length x < length Check.universe
+  minimal-bound x witness minimal with Check.decide (Left.initial , Right.initial)
+  ... | inj₁ same = ⊥-elim (witness-refutes witness (same-language same))
+  ... | inj₂ proof = ≤-trans (s≤s (minimal (Check.Shortest.word proof)
+    (witness-sound (Check.Shortest.witness proof)))) (Check.Shortest.bounded proof)
+
+@0 minimal-length-bound : ∀ r s x → Distinguishes r s x → Minimal r s x → length x < pair-bound r s
+minimal-length-bound r s x witness minimal = subst (length x <_) (Counts.pairs-size _≟_ r s)
+  (Compare.minimal-bound r s x witness minimal)
+
 shortest-equivalence : (r s : Regex A) → ShortestResult r s
 shortest-equivalence r s with Rumus.Syntax.equal _≟_ r s
 ... | yes refl = proved-equivalent ≈-refl
@@ -93,9 +111,6 @@ shortest-equivalence r s with Rumus.Syntax.equal _≟_ r s
 equivalence : (r s : Regex A) → Result r s
 equivalence r s = forget-shortest (shortest-equivalence r s)
 
-witness-refutes : ∀ {r s x} → Distinguishes r s x → r ≈ s → ⊥
-witness-refutes (inj₁ (p , n)) same = n (proj₁ same p)
-witness-refutes (inj₂ (q , n)) same = n (proj₂ same q)
 
 dec-equivalent : (r s : Regex A) → Dec (r ≈ s)
 dec-equivalent r s with equivalence r s

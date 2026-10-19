@@ -12,7 +12,7 @@ open import Data.List.Relation.Unary.Any using (here; there)
 open import Data.List.Relation.Unary.All using (All; []; _∷_)
 open import Data.Product.Base using (Σ; _×_; _,_; proj₁; proj₂)
 open import Data.Sum.Base using (_⊎_; inj₁; inj₂)
-open import Data.Nat.Base using (ℕ; zero; suc; _<_; _≤_; z≤n; s≤s)
+open import Data.Nat.Base using (ℕ; zero; suc; _+_; _<_; _≤_; z≤n; s≤s)
 open import Data.Nat.Properties using (≤-trans; ≤-refl; _≤?_; ≰⇒>)
 open import Data.Nat.Induction using (Acc; acc; <-wellFounded)
 open import Relation.Binary.PropositionalEquality.Core using (_≡_; refl; sym; trans; cong; subst)
@@ -40,6 +40,7 @@ record Shortest (start : Pair) : Set where
     witness : Separates start word
     supported : All (λ a → a ∈ˡ alphabet) word
     minimal : ∀ x → All (λ a → a ∈ˡ alphabet) x → Separates start x → length word ≤ length x
+    @0 bounded : length word < length universe
 
 record Path (start : Pair) (depth : ℕ) (q : Pair) : Set where
   constructor path
@@ -68,7 +69,7 @@ fresh : List Pair → List Pair → List Pair
 fresh seen [] = []
 fresh seen (q ∷ qs) with member pair-equal q seen
 ... | yes _ = fresh seen qs
-... | no _ = q ∷ fresh seen qs
+... | no _ = q ∷ fresh (q ∷ seen) qs
 
 fresh-cover : ∀ seen {qs q} → q ∈ˡ qs → Known seen (fresh seen qs) q
 fresh-cover seen {p ∷ qs} h with member pair-equal p seen
@@ -77,9 +78,10 @@ fresh-cover seen {p ∷ qs} h with member pair-equal p seen
 ...   | there h = fresh-cover seen h
 fresh-cover seen {p ∷ qs} h | no absent with h
 ... | here refl = inj₂ (here refl)
-... | there h with fresh-cover seen h
-...   | inj₁ p = inj₁ p
-...   | inj₂ p = inj₂ (there p)
+... | there h with fresh-cover (p ∷ seen) h
+...   | inj₁ (here eq) = inj₂ (here eq)
+...   | inj₁ (there k) = inj₁ k
+...   | inj₂ k = inj₂ (there k)
 
 fresh-member : ∀ seen {qs q} → q ∈ˡ fresh seen qs → (q ∈ˡ qs) × (q ∈ˡ seen → ⊥)
 fresh-member seen {p ∷ qs} h with member pair-equal p seen
@@ -87,14 +89,27 @@ fresh-member seen {p ∷ qs} h with member pair-equal p seen
 ...   | k , absent = there k , absent
 fresh-member seen {p ∷ qs} h | no absent with h
 ... | here refl = here refl , absent
-... | there h with fresh-member seen h
-...   | k , absent = there k , absent
+... | there h with fresh-member (p ∷ seen) h
+...   | k , absent = there k , λ present → absent (there present)
 
 fresh-all : ∀ {P : Pair → Set} seen {qs} → All P qs → All P (fresh seen qs)
 fresh-all seen [] = []
 fresh-all seen {qs = q ∷ qs} (p ∷ ps) with member pair-equal q seen
 ... | yes _ = fresh-all seen ps
-... | no _ = p ∷ fresh-all seen ps
+... | no _ = p ∷ fresh-all (q ∷ seen) ps
+
+open import Data.List.Relation.Unary.AllPairs using (AllPairs; []; _∷_)
+
+all-evidence : ∀ {P : Pair → Set} qs → (∀ q → q ∈ˡ qs → P q) → All P qs
+all-evidence [] evidence = []
+all-evidence (q ∷ qs) evidence = evidence q (here refl) ∷ all-evidence qs (λ p h → evidence p (there h))
+
+fresh-unique : ∀ seen qs → AllPairs (λ p q → p ≡ q → ⊥) (fresh seen qs)
+fresh-unique seen [] = []
+fresh-unique seen (q ∷ qs) with member pair-equal q seen
+... | yes _ = fresh-unique seen qs
+... | no _ = all-evidence (fresh (q ∷ seen) qs)
+  (λ p h eq → proj₂ (fresh-member (q ∷ seen) {qs = qs} h) (here (sym eq))) ∷ fresh-unique (q ∷ seen) qs
 
 remove-many : List Pair → List Pair → List Pair
 remove-many [] remaining = remaining
@@ -210,11 +225,27 @@ minimal-from-history {start} {depth} {seen} {qs} {x} history frontier distance y
 ... | no absent = ⊥-elim (refute-good {start = start} {x = y} (proj₁ (frontier _
   (history y letters (subst (length y <_) distance (≰⇒> absent))))) separates)
 
+fresh-remaining : ∀ seen remaining qs → Cover seen remaining → ∀ q → q ∈ˡ fresh seen qs → q ∈ˡ remaining
+fresh-remaining seen remaining qs cover q present with cover q
+... | inj₂ h = h
+... | inj₁ h = ⊥-elim (proj₂ (fresh-member seen {qs = qs} present) h)
+
+nonempty : ∀ {X : Set} {q : X} {xs} → q ∈ˡ xs → 0 < length xs
+nonempty {xs = _ ∷ _} h = s≤s z≤n
+
+add-positive : ∀ depth {remaining} → 0 < remaining → depth < depth + remaining
+add-positive zero h = h
+add-positive (suc depth) h = s≤s (add-positive depth h)
+
+lift-shrink : ∀ depth {smaller larger} → smaller < larger → suc depth + smaller ≤ depth + larger
+lift-shrink zero h = h
+lift-shrink (suc depth) h = s≤s (lift-shrink depth h)
+
 search : (start : Pair) → (@0 remaining : List Pair) → @0 Acc _<_ (length remaining) →
   (depth : ℕ) (seen qs : List Pair) → @0 Cover seen remaining →
   All (Path start depth) qs → Frontier seen qs → Known seen qs start → History start depth seen →
-  On start ⊎ Shortest start
-search start remaining (acc smaller) depth seen qs cover paths frontier initial history with fresh seen qs in ef
+  @0 (depth + length remaining ≤ length universe) → On start ⊎ Shortest start
+search start remaining (acc smaller) depth seen qs cover paths frontier initial history budget with fresh seen qs in ef
 ... | [] = inj₁ (bisimilar seen closed start (only-seen initial))
   where
   only-seen : ∀ {q} → Known seen qs q → q ∈ˡ seen
@@ -227,21 +258,25 @@ search start remaining (acc smaller) depth seen qs cover paths frontier initial 
   closed q h = proj₁ (frontier q h) , λ a k → only-seen (proj₂ (frontier q h) a k)
 ... | q ∷ rest with check start depth (q ∷ rest) (subst (All (Path start depth)) ef (fresh-all seen paths))
 ...   | inj₂ (x , witness , distance , supported) = inj₂
-  (shortest x witness supported (minimal-from-history {start = start} {depth = depth} {seen = seen} {qs = qs} {x = x} history frontier distance))
+  (shortest x witness supported (minimal-from-history {start = start} {depth = depth} {seen = seen} {qs = qs} {x = x} history frontier distance)
+    (subst (λ k → k < length universe) (sym distance)
+      (≤-trans (add-positive depth (nonempty (fresh-remaining seen remaining qs cover q
+        (subst (q ∈ˡ_) (sym ef) (here refl))))) budget)))
 ...   | inj₁ goods = search start (remove-many (fresh seen qs) remaining)
-  (smaller (subst (λ fs → length (remove-many fs remaining) < length remaining) (sym ef)
-    (remove-many-shorter q rest remaining present)))
+  (smaller decreased)
   (suc depth) (fresh seen qs ++ seen) (neighbors (fresh seen qs)) (advance-cover seen remaining qs cover)
   (neighbor-paths (fresh-all seen paths))
   (frontier-next frontier (subst (All Good) (sym ef) goods))
   (inj₁ (into-seen initial)) (history-next history frontier initial)
+  (≤-trans (lift-shrink depth decreased) budget)
   where
   @0 present : q ∈ˡ remaining
-  present with cover q
-  ... | inj₂ h = h
-  ... | inj₁ h = ⊥-elim (proj₂ (fresh-member seen {qs = qs} (subst (q ∈ˡ_) (sym ef) (here refl))) h)
+  present = fresh-remaining seen remaining qs cover q (subst (q ∈ˡ_) (sym ef) (here refl))
+  @0 decreased : length (remove-many (fresh seen qs) remaining) < length remaining
+  decreased = subst (λ fs → length (remove-many fs remaining) < length remaining) (sym ef)
+    (remove-many-shorter q rest remaining present)
 
 decide : ∀ start → On start ⊎ Shortest start
 decide start = search start universe (<-wellFounded (length universe)) zero [] (start ∷ [])
   (λ q → inj₂ (universe-complete q)) (path [] refl refl [] ∷ []) (λ q ()) (inj₂ (here refl))
-  (λ x letters ())
+  (λ x letters ()) ≤-refl

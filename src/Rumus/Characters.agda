@@ -17,7 +17,7 @@ open import Rumus.NormalizedMatch _≟_ toℕ (toℕ-injective _ _) public using
 open import Rumus.Compiled _≟_ public
   using (Compiled; compile; compiled-match; compiled-accepts; compiled-sound; compiled-complete; start; advance; finish)
 import Rumus.Equivalence _≟_ as E
-open E public using (Result; equivalent; different; Distinguishes; witness-refutes; Minimal; ShortestResult; proved-equivalent; shortest-difference)
+open E public using (Result; equivalent; different; Distinguishes; witness-refutes; Minimal; minimal-length-bound; ShortestResult; proved-equivalent; shortest-difference)
 
 shortest-equivalence : (r s : Regex Char) → ShortestResult r s
 shortest-equivalence r s with E.shortest-equivalence (normalize r) (normalize s)
