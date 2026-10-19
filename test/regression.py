@@ -100,6 +100,10 @@ expect(("match", "a||b", ""), "parse error at offset 2: missing left operand of 
 assert invoke("unknown", status=1).startswith("usage: rumus")
 assert invoke("--help").startswith("usage: rumus")
 
+for char in [chr(n) for n in range(32, 127)] + ["λ", "🙂", "é"]:
+    expect(("match", "\\" + char, char), "true")
+    expect(("match", "(\\" + char + ")", char), "true")
+
 normalizations = [
     ("#|a", "a"),
     ("a|#", "a"),

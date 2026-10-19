@@ -10,6 +10,8 @@ open import Data.Product.Base using (_×_; _,_)
 open import Data.String.Base using (String; toList)
 open import Data.Sum.Base using (_⊎_; inj₁; inj₂)
 open import Rumus.Regex
+open import Rumus.Parser.Token
+open import Rumus.Parser.Syntax public
 
 record Error : Set where
   constructor error
@@ -17,14 +19,6 @@ record Error : Set where
     offset : ℕ
     message : String
 
-data Operator : Set where
-  group choice sequence : Operator
-
-Operands : Set
-Operands = List (Regex Char)
-
-Stack : Set
-Stack = List Operator
 
 reduce : Operator → Operands → String ⊎ Operands
 reduce choice (s ∷ r ∷ rs) = inj₂ ((r ∪ s) ∷ rs)
@@ -72,37 +66,37 @@ prepare : Bool → Stack → Operands → String ⊎ (Stack × Operands)
 prepare true ops rs = inj₂ (ops , rs)
 prepare false ops rs = push-sequence ops rs
 
-atom : Char → Regex Char
-atom '#' = ∅
-atom '@' = ε
-atom a = lit a
 
 parse-loop : List Char → ℕ → Bool → Stack → Operands → Error ⊎ Regex Char
 parse-loop [] n true ops rs = inj₁ (error n "expected expression")
 parse-loop [] n false ops rs with finish ops rs
 ... | inj₁ e = inj₁ (error n e)
 ... | inj₂ r = inj₂ r
-parse-loop ('(' ∷ cs) n expect ops rs with prepare expect ops rs
-... | inj₁ e = inj₁ (error n e)
-... | inj₂ (os , ss) = parse-loop cs (suc n) true (group ∷ os) ss
-parse-loop (')' ∷ cs) n true ops rs = inj₁ (error n "expected expression before closing parenthesis")
-parse-loop (')' ∷ cs) n false ops rs with close ops rs
+parse-loop (c ∷ cs) n expect ops rs with kind c | expect
+... | opening | need with prepare need ops rs
+...   | inj₁ e = inj₁ (error n e)
+...   | inj₂ (os , ss) = parse-loop cs (suc n) true (group ∷ os) ss
+parse-loop (c ∷ cs) n expect ops rs | closing | true = inj₁ (error n "expected expression before closing parenthesis")
+parse-loop (c ∷ cs) n expect ops rs | closing | false with close ops rs
 ... | inj₁ e = inj₁ (error n e)
 ... | inj₂ (os , ss) = parse-loop cs (suc n) false os ss
-parse-loop ('|' ∷ cs) n true ops rs = inj₁ (error n "missing left operand of union")
-parse-loop ('|' ∷ cs) n false ops rs with push-choice ops rs
+parse-loop (c ∷ cs) n expect ops rs | alternation | true = inj₁ (error n "missing left operand of union")
+parse-loop (c ∷ cs) n expect ops rs | alternation | false with push-choice ops rs
 ... | inj₁ e = inj₁ (error n e)
 ... | inj₂ (os , ss) = parse-loop cs (suc n) true os ss
-parse-loop ('*' ∷ cs) n true ops rs = inj₁ (error n "star requires an operand")
-parse-loop ('*' ∷ cs) n false ops [] = inj₁ (error n "star requires an operand")
-parse-loop ('*' ∷ cs) n false ops (r ∷ rs) = parse-loop cs (suc n) false ops (star r ∷ rs)
-parse-loop ('\\' ∷ []) n expect ops rs = inj₁ (error n "trailing escape")
-parse-loop ('\\' ∷ c ∷ cs) n expect ops rs with prepare expect ops rs
+parse-loop (c ∷ cs) n expect ops rs | repetition | true = inj₁ (error n "star requires an operand")
+parse-loop (c ∷ cs) n expect ops [] | repetition | false = inj₁ (error n "star requires an operand")
+parse-loop (c ∷ cs) n expect ops (r ∷ rs) | repetition | false = parse-loop cs (suc n) false ops (star r ∷ rs)
+parse-loop (c ∷ []) n expect ops rs | escaping | need = inj₁ (error n "trailing escape")
+parse-loop (c ∷ d ∷ cs) n expect ops rs | escaping | need with prepare need ops rs
 ... | inj₁ e = inj₁ (error n e)
-... | inj₂ (os , ss) = parse-loop cs (suc (suc n)) false os (lit c ∷ ss)
-parse-loop (c ∷ cs) n expect ops rs with prepare expect ops rs
+... | inj₂ (os , ss) = parse-loop cs (suc (suc n)) false os (lit d ∷ ss)
+parse-loop (c ∷ cs) n expect ops rs | ordinary | need with prepare need ops rs
 ... | inj₁ e = inj₁ (error n e)
 ... | inj₂ (os , ss) = parse-loop cs (suc n) false os (atom c ∷ ss)
 
+parse-chars : List Char → Error ⊎ Regex Char
+parse-chars cs = parse-loop cs 0 true [] []
+
 parse : String → Error ⊎ Regex Char
-parse s = parse-loop (toList s) 0 true [] []
+parse s = parse-chars (toList s)

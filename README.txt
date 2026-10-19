@@ -163,13 +163,13 @@
 
                                             library:
 
-           the character api exposes decidable membership, boolean matching,
-           normalization and equivalence with proofs or distinguishing strings
-           while the generic modules separate semantics, derivatives, normalization,
-           position automata and relation refinement. semantic modules use safe mode
-           without the k axiom or project postulates with the language correspondence
-           theorems applying to the expression returned by the parser. parsing has
-           executable regressions and terminal io uses the standard library bindings
+         the character api exposes decidable membership, boolean matching,
+         normalization and equivalence with proofs or shortest distinguishing strings.
+         generic modules separate semantics, derivatives, canonical normalization,
+         position automata and worklist exploration, with safe mode and no project
+         postulates throughout the semantic development. parser soundness and
+         completeness relate successful decisions and failures to an inductive
+         shift/reduce grammar covering precedence, grouping, and literal escaping
 
            a downstream module importing the library must enable --erasure and
            --erased-matches, matching the checked configuration used by this project
