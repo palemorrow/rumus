@@ -80,16 +80,21 @@
                                                                              v
                                                                      proof or witness
 
-          the checker traverses reachable pairs in breadth-first layers, retaining
-          input paths and their lengths for each queued state. the history invariant
-          records that every shorter input reaches states with equal nullability,
-          so a mismatch supplies both a witness and a proof of minimal length
+            transition rows and nullable outputs are tabulated over the occurrence
+            basis, allowing state transitions to combine cached position results
+            without enumerating every subset. lookup agrees with the source function
+            even for symbols outside the symbols stored in a transition row
 
-          termination follows from well-founded induction on the finite set of
-          unvisited pairs. this set and its accessibility proof are erased by the
-          compiler, so execution constructs only reached states and their outgoing
-          transitions. exhausting the queue establishes a closed bisimulation whose
-          correctness follows by induction on the remaining input
+           the checker traverses reachable pairs in breadth-first layers, retaining
+           input paths and their lengths for each queued state. the history invariant
+           records that every shorter input reaches states with equal nullability,
+           so a mismatch supplies both a witness and a proof of minimal length
+
+           termination follows from well-founded induction on the finite set of
+           unvisited pairs. this set and its accessibility proof are erased by the
+           compiler, so execution constructs only reached states and their outgoing
+           transitions. exhausting the queue establishes a closed bisimulation whose
+           correctness follows by induction on the remaining input
 
              for a*b and ab* the successor languages after b normalize to @ and #,
              so the empty string distinguishes that successor pair and prefixing b

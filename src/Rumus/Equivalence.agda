@@ -17,7 +17,7 @@ open import Rumus.Regex
 open import Rumus.Language
 open import Rumus.Finite
 open import Rumus.Support
-import Rumus.Automaton
+import Rumus.CachedAutomaton
 import Rumus.BreadthFirst
 import Rumus.Syntax
 
@@ -44,8 +44,8 @@ transport-difference rt su (inj₁ (p , nq)) = inj₁ (proj₁ rt p , λ q → n
 transport-difference rt su (inj₂ (q , np)) = inj₂ (proj₁ su q , λ p → np (proj₂ rt p))
 
 module Compare (r s : Regex A) where
-  module Left = Rumus.Automaton _≟_ r
-  module Right = Rumus.Automaton _≟_ s
+  module Left = Rumus.CachedAutomaton _≟_ r
+  module Right = Rumus.CachedAutomaton _≟_ s
   alphabet : List A
   alphabet = unique _≟_ (backwards (symbols r ++ symbols s))
 
