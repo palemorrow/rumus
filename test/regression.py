@@ -116,6 +116,7 @@ pairs = [
     ("a*", "@|aa*", True),
     ("(ab)*a", "a(ba)*", True),
     ("(a*b*)*", "(a|b)*", True),
+    ("(abcdefghij)*", "@|abcdefghij(abcdefghij)*", True),
     ("(@|a)*", "a*", True),
     ("#*", "@", True),
     ("#", "a#", True),

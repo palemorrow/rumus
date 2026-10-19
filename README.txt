@@ -75,21 +75,21 @@
             k literal occurrences
 
            r --> residuals --> subsets + initial --> qr --+
-                                                        +--> qr x qs --> refinement
+                                                        +--> qr x qs --> worklist
            s --> residuals --> subsets + initial --> qs --+                    |
                                                                              v
                                                                      proof or witness
 
-            the checker starts with every state pair and removes any pair with
-            different nullability or an already removed successor. a nullability
-            mismatch supplies the empty witness, while an absent successor supplies
-            a witness extended by the corresponding input symbol
+          the checker starts with the initial pair and queues successors of each
+          previously unseen pair, retaining functions that transport successor
+          witnesses back to the initial expressions. a nullability mismatch returns
+          the corresponding input path as a concrete distinguishing string
 
-            each recursive call carries a proof that the remaining relation is
-            strictly smaller, so termination follows from well-founded induction
-            on its length. when the remaining pairs agree on nullability and retain
-            all successors, induction on strings proves equivalence for those pairs,
-            while removed pairs retain their distinguishing witnesses
+          termination follows from well-founded induction on the finite set of
+          unvisited pairs. this set and its accessibility proof are erased by the
+          compiler, so execution constructs only reached states and their outgoing
+          transitions. exhausting the queue establishes a closed bisimulation whose
+          correctness follows by induction on the remaining input
 
              for a*b and ab* the successor languages after b normalize to @ and #,
              so the empty string distinguishes that successor pair and prefixing b
@@ -111,11 +111,11 @@
                                                v
                                           witness [b]
 
-          the powerset enumeration includes unreachable subsets and takes exponential
-          space in literal occurrences even when the reachable machine is smaller.
-          only literals appearing in either expression are explored and the support
-          theorem places every symbol of an accepted string in that finite alphabet,
-          so the equivalence result remains valid over all strings
+           the powerset enumeration bounds the proof of termination without being
+           evaluated by the executable, although the reachable machine can still
+           have exponentially many states. only literals appearing in either source
+           expression are explored and the support theorem places every symbol of
+           an accepted string in that alphabet, extending equivalence to all strings
 
               generic matching and equivalence require decidable symbol equality,
               while normalization additionally takes an injective natural-number

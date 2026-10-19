@@ -157,19 +157,28 @@ remove-preserve eq x (z ∷ zs) n p with eq x z
 remove-preserve eq x (z ∷ zs) n (here e) | no _ = here e
 remove-preserve eq x (z ∷ zs) n (there k) | no _ = there (remove-preserve eq x zs n k)
 
+adjoin : ∀ {X : Set} → DecidableEquality X → X → List X → List X
+adjoin eq x xs with member eq x xs
+... | yes _ = xs
+... | no _ = x ∷ xs
+
+adjoin-head : ∀ {X : Set} (eq : DecidableEquality X) x xs → x ∈ˡ adjoin eq x xs
+adjoin-head eq x xs with member eq x xs
+... | yes h = h
+... | no _ = here refl
+
+adjoin-tail : ∀ {X : Set} (eq : DecidableEquality X) x xs {y} → y ∈ˡ xs → y ∈ˡ adjoin eq x xs
+adjoin-tail eq x xs h with member eq x xs
+... | yes _ = h
+... | no _ = there h
+
 unique : ∀ {X : Set} → DecidableEquality X → List X → List X
 unique eq [] = []
-unique eq (x ∷ xs) with member eq x (unique eq xs)
-... | yes _ = unique eq xs
-... | no _ = x ∷ unique eq xs
+unique eq (x ∷ xs) = adjoin eq x (unique eq xs)
 
 unique-cover : ∀ {X : Set} (eq : DecidableEquality X) {x xs} → x ∈ˡ xs → x ∈ˡ unique eq xs
-unique-cover eq {xs = y ∷ ys} p with member eq y (unique eq ys)
-... | yes m with p
-...   | here refl = m
-...   | there h = unique-cover eq h
-unique-cover eq {xs = y ∷ ys} (here refl) | no _ = here refl
-unique-cover eq {xs = y ∷ ys} (there h) | no _ = there (unique-cover eq h)
+unique-cover eq {xs = y ∷ ys} (here refl) = adjoin-head eq y (unique eq ys)
+unique-cover eq {xs = y ∷ ys} (there h) = adjoin-tail eq y (unique eq ys) (unique-cover eq h)
 
 backwards : ∀ {X : Set} → List X → List X
 backwards [] = []

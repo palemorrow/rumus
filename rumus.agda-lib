@@ -1,4 +1,4 @@
 name: rumus
 depend: standard-library-2.3
 include: src app test
-flags: --without-K
+flags: --without-K --erasure --erased-matches

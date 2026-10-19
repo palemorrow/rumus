@@ -16,7 +16,7 @@ open import Rumus.Language
 open import Rumus.Finite
 open import Rumus.Support
 import Rumus.Automaton
-import Rumus.Bisimulation
+import Rumus.Worklist
 import Rumus.Syntax
 
 Distinguishes : Regex A → Regex A → List A → Set
@@ -32,7 +32,7 @@ module Compare (r s : Regex A) where
   alphabet : List A
   alphabet = unique _≟_ (backwards (symbols r ++ symbols s))
 
-  module Check = Rumus.Bisimulation Left.machine Right.machine alphabet
+  module Check = Rumus.Worklist Left.machine Right.machine alphabet
 
   same-language : Check.On (Left.initial , Right.initial) → r ≈ s
   same-language same {x} =
