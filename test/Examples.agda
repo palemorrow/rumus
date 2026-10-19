@@ -74,3 +74,6 @@ equivalent-example = equivalence (a ∙ star a) (a ∪ (a ∙ a ∙ star a))
 
 counterexample-example : Result (star a ∙ b) (a ∙ star b)
 counterexample-example = equivalence (star a ∙ b) (a ∙ star b)
+
+shortest-counterexample : ShortestResult (a ∙ a ∙ a ∙ a) (a ∙ a ∙ a ∙ b)
+shortest-counterexample = shortest-equivalence (a ∙ a ∙ a ∙ a) (a ∙ a ∙ a ∙ b)

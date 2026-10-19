@@ -13,15 +13,18 @@ open import Rumus.Language
 open import Rumus.Normalize _≟_ toℕ (toℕ-injective _ _) public using (normalize; normalize-correct)
 open import Rumus.NormalizedMatch _≟_ toℕ (toℕ-injective _ _) public using (match; accepts; sound; complete; step)
 import Rumus.Equivalence _≟_ as E
-open E public using (Result; equivalent; different; Distinguishes; witness-refutes)
+open E public using (Result; equivalent; different; Distinguishes; witness-refutes; Minimal; ShortestResult; proved-equivalent; shortest-difference)
+
+shortest-equivalence : (r s : Regex Char) → ShortestResult r s
+shortest-equivalence r s with E.shortest-equivalence (normalize r) (normalize s)
+... | proved-equivalent same = proved-equivalent
+  (≈-trans (≈-sym (normalize-correct r)) (≈-trans same (normalize-correct s)))
+... | shortest-difference x proof minimal = shortest-difference x
+  (E.transport-difference (normalize-correct r) (normalize-correct s) proof)
+  (λ y h → minimal y (E.transport-difference (≈-sym (normalize-correct r)) (≈-sym (normalize-correct s)) h))
 
 equivalence : (r s : Regex Char) → Result r s
-equivalence r s with E.equivalence (normalize r) (normalize s)
-... | equivalent same = equivalent (≈-trans (≈-sym (normalize-correct r)) (≈-trans same (normalize-correct s)))
-... | different x (inj₁ (p , nq)) = different x (inj₁
-  (proj₁ (normalize-correct r) p , (λ q → nq (proj₂ (normalize-correct s) q))))
-... | different x (inj₂ (q , np)) = different x (inj₂
-  (proj₁ (normalize-correct s) q , (λ p → np (proj₂ (normalize-correct r) p))))
+equivalence r s = E.forget-shortest (shortest-equivalence r s)
 
 dec-equivalent : (r s : Regex Char) → Dec (r ≈ s)
 dec-equivalent r s with equivalence r s

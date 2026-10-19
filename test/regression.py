@@ -71,6 +71,7 @@ fixed = [
     ("@", "a", False),
     ("a", "a", True),
     ("a", "b", False),
+    ("aaaa", "aaab", False),
     ("a", "aa", False),
     ("((a|b)|a)", "b", True),
     ("ab", "ab", True),
@@ -123,6 +124,7 @@ pairs = [
     ("a*b", "ab*", False),
     ("@", "#", False),
     ("a", "b", False),
+    ("aaaa", "aaab", False),
     ("a*", "aa*", False),
     ("(ab)*", "(ba)*", False),
     ("λ*", "🙂*", False),
@@ -140,6 +142,14 @@ for lhs, rhs, equivalent in pairs:
         left = invoke("match", lhs, witness)
         right = invoke("match", rhs, witness)
         assert left != right, (lhs, rhs, witness, left, right)
+
+for lhs, rhs, alphabet in [("aaaa", "aaab", "ab"), ("ab*ac", "ab*ad", "abcd")]:
+    lines = invoke("equivalent", lhs, rhs).splitlines()
+    witness = lines[1].removeprefix("counterexample: ")
+    for size in range(len(witness)):
+        for letters in itertools.product(alphabet, repeat=size):
+            word = "".join(letters)
+            assert invoke("match", lhs, word) == invoke("match", rhs, word)
 
 expect(("equivalent", "a*b", "ab*"), "not equivalent\ncounterexample: b")
 

@@ -80,10 +80,10 @@
                                                                              v
                                                                      proof or witness
 
-          the checker starts with the initial pair and queues successors of each
-          previously unseen pair, retaining functions that transport successor
-          witnesses back to the initial expressions. a nullability mismatch returns
-          the corresponding input path as a concrete distinguishing string
+          the checker traverses reachable pairs in breadth-first layers, retaining
+          input paths and their lengths for each queued state. the history invariant
+          records that every shorter input reaches states with equal nullability,
+          so a mismatch supplies both a witness and a proof of minimal length
 
           termination follows from well-founded induction on the finite set of
           unvisited pairs. this set and its accessibility proof are erased by the
