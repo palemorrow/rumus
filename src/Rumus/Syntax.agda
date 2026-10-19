@@ -59,10 +59,13 @@ equal (star _) (lit _) = no (λ ())
 equal (star _) (_ ∪ _) = no (λ ())
 equal (star _) (_ ∙ _) = no (λ ())
 
+code : (A → ℕ) → Regex A → List ℕ → List ℕ
+code rank ∅ rest = 0 ∷ rest
+code rank ε rest = 1 ∷ rest
+code rank (lit a) rest = 2 ∷ rank a ∷ rest
+code rank (r ∪ s) rest = 3 ∷ code rank r (code rank s rest)
+code rank (r ∙ s) rest = 4 ∷ code rank r (code rank s rest)
+code rank (star r) rest = 5 ∷ code rank r rest
+
 key : (A → ℕ) → Regex A → List ℕ
-key rank ∅ = 0 ∷ []
-key rank ε = 1 ∷ []
-key rank (lit a) = 2 ∷ rank a ∷ []
-key rank (r ∪ s) = 3 ∷ (key rank r ++ key rank s)
-key rank (r ∙ s) = 4 ∷ (key rank r ++ key rank s)
-key rank (star r) = 5 ∷ key rank r
+key rank r = code rank r []

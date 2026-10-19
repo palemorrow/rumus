@@ -179,6 +179,7 @@ for expression in sorted(expressions, key=repr):
     regex = render(expression)
     expected = language(expression, 3)
     normalized = invoke("normalize", regex)
+    expect(("normalize", normalized), normalized)
     expect(("match-many", regex, *words), "\n".join(str(word in expected).lower() for word in words))
     for word in words:
         accepted = str(word in expected).lower()

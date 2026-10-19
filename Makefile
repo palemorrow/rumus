@@ -17,7 +17,9 @@ toolchain:
 	@printf '%s\n' '$(STDLIB)/standard-library.agda-lib' > .deps/libraries
 
 check: toolchain
-	$(AGDA) $(AGDAFLAGS) --safe test/Examples.agda
+	@set -e; for source in $$(find src test -type f -name '*.agda' | sort); do \
+		$(AGDA) $(AGDAFLAGS) --safe "$$source"; \
+	done
 	$(AGDA) $(AGDAFLAGS) app/Main.agda
 
 build: toolchain

@@ -11,6 +11,8 @@ open import Relation.Nullary using (Dec; yes; no)
 open import Rumus.Regex
 open import Rumus.Language
 open import Rumus.Normalize _≟_ toℕ (toℕ-injective _ _) public using (normalize; normalize-correct)
+open import Rumus.Normalize.Properties _≟_ toℕ (toℕ-injective _ _) public
+  using (Canonical; normalize-idempotent; normalize-ordered; normalize-union-associative; normalize-union-commutative)
 open import Rumus.NormalizedMatch _≟_ toℕ (toℕ-injective _ _) public using (match; accepts; sound; complete; step)
 open import Rumus.Compiled _≟_ public
   using (Compiled; compile; compiled-match; compiled-accepts; compiled-sound; compiled-complete; start; advance; finish)

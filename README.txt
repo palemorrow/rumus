@@ -39,7 +39,9 @@
            alternatives and applies language-preserving reductions for empty unions,
            empty products, epsilon factors, and nested stars. these preservation
            proofs compose with derivative correctness, allowing each residual to be
-           normalized before the next symbol is consumed.
+           normalized before the next symbol is consumed. idempotence and union
+           associativity and commutativity are proved with syntactic equality,
+           using an injective prefix encoding to order distinct alternatives
 
            the command ./build/rumus trace '(a|b)*abb' 'aabb' produces the residuals
            below, including the identical expressions reached after the two a steps:

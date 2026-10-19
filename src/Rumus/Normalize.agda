@@ -18,15 +18,8 @@ open import Rumus.Language
 open import Rumus.Algebra
 open import Rumus.Syntax _≟_
 
-private
-  lex-less : List ℕ → List ℕ → Bool
-  lex-less [] [] = false
-  lex-less [] (_ ∷ _) = true
-  lex-less (_ ∷ _) [] = false
-  lex-less (x ∷ xs) (y ∷ ys) with x <ᵇ y | y <ᵇ x
-  ... | true | _ = true
-  ... | false | true = false
-  ... | false | false = lex-less xs ys
+open import Rumus.Order _≟_ rank rank-injective public using (_≺_; compare; ≺-trans; ≺-irrefl)
+open import Relation.Binary.Definitions using (tri<; tri≈; tri>)
 
 sum : List (Regex A) → Regex A
 sum [] = ∅
@@ -34,17 +27,17 @@ sum (r ∷ rs) = r ∪ sum rs
 
 insert : Regex A → List (Regex A) → List (Regex A)
 insert r [] = r ∷ []
-insert r (s ∷ ss) with equal r s | lex-less (key rank r) (key rank s)
-... | yes _ | _ = s ∷ ss
-... | no _ | true = r ∷ s ∷ ss
-... | no _ | false = s ∷ insert r ss
+insert r (s ∷ ss) with compare r s
+... | tri≈ _ _ _ = s ∷ ss
+... | tri< _ _ _ = r ∷ s ∷ ss
+... | tri> _ _ _ = s ∷ insert r ss
 
 insert-correct : ∀ r rs → sum (insert r rs) ≈ (r ∪ sum rs)
 insert-correct r [] = ≈-refl
-insert-correct r (s ∷ ss) with equal r s | lex-less (key rank r) (key rank s)
-... | yes refl | _ = ≈-sym (≈-trans (≈-sym union-assoc) (union-cong union-idem ≈-refl))
-... | no _ | true = ≈-refl
-... | no _ | false = ≈-trans (union-cong ≈-refl (insert-correct r ss))
+insert-correct r (s ∷ ss) with compare r s
+... | tri≈ _ refl _ = ≈-sym (≈-trans (≈-sym union-assoc) (union-cong union-idem ≈-refl))
+... | tri< _ _ _ = ≈-refl
+... | tri> _ _ _ = ≈-trans (union-cong ≈-refl (insert-correct r ss))
   (≈-trans (≈-sym union-assoc) (≈-trans (union-cong union-comm ≈-refl) union-assoc))
 
 sort : List (Regex A) → List (Regex A)
@@ -75,36 +68,21 @@ terms-correct (lit a) = union-emptyʳ
 terms-correct (r ∙ s) = union-emptyʳ
 terms-correct (star r) = union-emptyʳ
 
-drop-zero : Regex A → Regex A → Regex A
-drop-zero r s with equal r ∅ | equal s ∅
-... | yes _ | _ = s
-... | no _ | yes _ = r
-... | no _ | no _ = r ∪ s
+pack : List (Regex A) → Regex A
+pack [] = ∅
+pack (r ∷ []) = r
+pack (r ∷ s ∷ rs) = r ∪ pack (s ∷ rs)
 
-drop-zero-correct : ∀ r s → drop-zero r s ≈ (r ∪ s)
-drop-zero-correct r s with equal r ∅ | equal s ∅
-... | yes refl | _ = ≈-sym union-emptyˡ
-... | no _ | yes refl = ≈-sym union-emptyʳ
-... | no _ | no _ = ≈-refl
-
-trim : Regex A → Regex A
-trim (r ∪ s) = drop-zero (trim r) (trim s)
-trim r = r
-
-trim-correct : ∀ r → trim r ≈ r
-trim-correct (r ∪ s) = ≈-trans (drop-zero-correct (trim r) (trim s))
-  (union-cong (trim-correct r) (trim-correct s))
-trim-correct ∅ = ≈-refl
-trim-correct ε = ≈-refl
-trim-correct (lit _) = ≈-refl
-trim-correct (_ ∙ _) = ≈-refl
-trim-correct (star _) = ≈-refl
+pack-correct : ∀ rs → pack rs ≈ sum rs
+pack-correct [] = ≈-refl
+pack-correct (r ∷ []) = ≈-sym union-emptyʳ
+pack-correct (r ∷ s ∷ rs) = union-cong ≈-refl (pack-correct (s ∷ rs))
 
 union : Regex A → Regex A → Regex A
-union r s = trim (sum (sort (terms (r ∪ s))))
+union r s = pack (sort (terms (r ∪ s)))
 
 union-correct : ∀ r s → union r s ≈ (r ∪ s)
-union-correct r s = ≈-trans (trim-correct (sum (sort (terms (r ∪ s)))))
+union-correct r s = ≈-trans (pack-correct (sort (terms (r ∪ s))))
   (≈-trans (sort-correct (terms (r ∪ s))) (terms-correct (r ∪ s)))
 
 product : Regex A → Regex A → Regex A
