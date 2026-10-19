@@ -1,0 +1,28 @@
+name: setup agda
+description: install the pinned compiler and standard library
+
+runs:
+  using: composite
+  steps:
+    - uses: haskell-actions/setup@v2
+      with:
+        ghc-version: '9.6.7'
+        cabal-version: '3.12.1.0'
+    - id: cache
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cabal/bin/agda
+          ~/.cabal/store
+          ~/.cabal/share
+          .deps/agda-stdlib-2.3
+        key: rumus-agda-2.8.0-stdlib-2.3-ghc-9.6.7-${{ runner.os }}-${{ runner.arch }}-1
+    - shell: bash
+      run: echo "$HOME/.cabal/bin" >> "$GITHUB_PATH"
+    - if: steps.cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        cabal update
+        cabal install Agda-2.8.0 --install-method=copy --overwrite-policy=always
+    - shell: bash
+      run: make deps

@@ -1,0 +1,33 @@
+name: package
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+jobs:
+  linux:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-agda
+      - run: make test
+      - run: |
+          mkdir -p dist/rumus
+          cp build/rumus README.txt dist/rumus/
+          strip dist/rumus/rumus
+          test "$(dist/rumus/rumus match '(a|b)*abb' aabb)" = true
+          tar -czf dist/rumus-linux-x86_64.tar.gz -C dist rumus
+      - run: sha256sum rumus-linux-x86_64.tar.gz > SHA256SUMS
+        working-directory: dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rumus-linux-x86_64
+          path: |
+            dist/rumus-linux-x86_64.tar.gz
+            dist/SHA256SUMS
+          if-no-files-found: error
