@@ -88,6 +88,10 @@ fixed = [
 for regex, word, accepted in fixed:
     expect(("match", regex, word), str(accepted).lower())
 
+expect(("match-many", "(a|b)*abb", "aabb", "abab", "abb"), "true\nfalse\ntrue")
+expect(("match-many", "@", "", "a"), "true\nfalse")
+expect(("match-many", "a|", "a"), "parse error at offset 2: expected expression", 1)
+
 malformed = ["", "()", "(", ")", "a)", "(a", "|a", "a|", "a||b", "*a", "a(|b)", "a\\"]
 for regex in malformed:
     error = invoke("match", regex, "", status=1)
@@ -175,6 +179,7 @@ for expression in sorted(expressions, key=repr):
     regex = render(expression)
     expected = language(expression, 3)
     normalized = invoke("normalize", regex)
+    expect(("match-many", regex, *words), "\n".join(str(word in expected).lower() for word in words))
     for word in words:
         accepted = str(word in expected).lower()
         expect(("match", regex, word), accepted)

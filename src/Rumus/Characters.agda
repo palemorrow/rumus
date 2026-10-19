@@ -12,6 +12,8 @@ open import Rumus.Regex
 open import Rumus.Language
 open import Rumus.Normalize _≟_ toℕ (toℕ-injective _ _) public using (normalize; normalize-correct)
 open import Rumus.NormalizedMatch _≟_ toℕ (toℕ-injective _ _) public using (match; accepts; sound; complete; step)
+open import Rumus.Compiled _≟_ public
+  using (Compiled; compile; compiled-match; compiled-accepts; compiled-sound; compiled-complete; start; advance; finish)
 import Rumus.Equivalence _≟_ as E
 open E public using (Result; equivalent; different; Distinguishes; witness-refutes; Minimal; ShortestResult; proved-equivalent; shortest-difference)
 

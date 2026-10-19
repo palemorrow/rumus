@@ -126,6 +126,10 @@
               while normalization additionally takes an injective natural-number
               encoding to order the syntactic alternatives within unions
 
+            the compiled interface retains its prepared position tables and exposes
+            incremental transitions plus decidable membership, allowing repeated
+            inputs to share the same compiled expression
+
                                              build:
 
          the pinned toolchain consists of agda 2.8.0, standard library 2.3, ghc 9.6.7,
@@ -147,6 +151,14 @@
             tagged and manual package builds run the same tests before uploading a
             linux executable archive and its sha-256 checksum as workflow artifacts
 
+              match-many reuses one compiled expression for every following input,
+              printing the corresponding boolean decisions in their argument order
+
+                   $ ./build/rumus match-many '(a|b)*abb' 'aabb' 'abab' 'abb'
+                   true
+                   false
+                   true
+
                                             library:
 
            the character api exposes decidable membership, boolean matching,
@@ -156,6 +168,9 @@
            without the k axiom or project postulates with the language correspondence
            theorems applying to the expression returned by the parser. parsing has
            executable regressions and terminal io uses the standard library bindings
+
+           a downstream module importing the library must enable --erasure and
+           --erased-matches, matching the checked configuration used by this project
 
                                           references:
 

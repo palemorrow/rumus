@@ -77,3 +77,9 @@ counterexample-example = equivalence (star a ∙ b) (a ∙ star b)
 
 shortest-counterexample : ShortestResult (a ∙ a ∙ a ∙ a) (a ∙ a ∙ a ∙ b)
 shortest-counterexample = shortest-equivalence (a ∙ a ∙ a ∙ a) (a ∙ a ∙ a ∙ b)
+
+compiled-membership : Dec (toList "aabb" ∈ suffix)
+compiled-membership = compiled-match (compile suffix) (toList "aabb")
+
+compiled-accepts-example : compiled-accepts (compile suffix) (toList "aabb") ≡ true
+compiled-accepts-example = refl

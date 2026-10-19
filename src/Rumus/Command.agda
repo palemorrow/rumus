@@ -30,13 +30,21 @@ trace : Regex Char → List Char → String
 trace r [] = print-regex r ++ "\nnullable: " ++ bool-text (accepts r [])
 trace r (a ∷ x) = print-regex r ++ "\n  d/" ++ literal-text a ++ "\n" ++ trace (step a r) x
 
+batch : ∀ {r} → Compiled r → List String → String
+batch program [] = ""
+batch program (x ∷ []) = bool-text (compiled-accepts program (toList x))
+batch program (x ∷ xs) = bool-text (compiled-accepts program (toList x)) ++ "\n" ++ batch program xs
+
 usage : String
-usage = "usage: rumus match REGEX INPUT\n       rumus equivalent REGEX REGEX\n       rumus normalize REGEX\n       rumus trace REGEX INPUT\nsyntax: # empty, @ epsilon, | union, juxtaposition, *, (), \\ escape"
+usage = "usage: rumus match REGEX INPUT\n       rumus match-many REGEX INPUT...\n       rumus equivalent REGEX REGEX\n       rumus normalize REGEX\n       rumus trace REGEX INPUT\nsyntax: # empty, @ epsilon, | union, juxtaposition, *, (), \\ escape"
 
 command : List String → Response
 command ("match" ∷ regex-text ∷ input ∷ []) with parse regex-text
 ... | inj₁ e = parse-error e
 ... | inj₂ r = response true (bool-text (accepts (normalize r) (toList input)))
+command ("match-many" ∷ regex-text ∷ input ∷ inputs) with parse regex-text
+... | inj₁ e = parse-error e
+... | inj₂ r = response true (batch (compile (normalize r)) (input ∷ inputs))
 command ("equivalent" ∷ lhs ∷ rhs ∷ []) with parse lhs | parse rhs
 ... | inj₁ e | _ = parse-error e
 ... | inj₂ _ | inj₁ e = parse-error e
